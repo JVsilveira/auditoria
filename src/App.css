@@ -1,118 +1,207 @@
-/* Fundo moderno com gradiente */
+/* Reset básico e corpo */
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #1e1e2f, #282846);
   color: #f5f5f5;
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 40px;
+  padding: 40px 20px;
 }
 
 /* Container principal */
 .container {
   background: #2f2f48;
-  padding: 30px;
+  padding: 30px 35px;
   border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  width: 450px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 480px;
   text-align: center;
   animation: fadeIn 0.4s ease-in-out;
+  user-select: none;
 }
 
-/* Animação de entrada */
+/* Animação fade in */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Botão de upload */
+/* Botão de upload estilizado */
 .upload-btn {
   display: inline-block;
-  padding: 12px 18px;
+  padding: 14px 22px;
   background: #007bff;
   color: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: bold;
-  margin-bottom: 20px;
-  transition: background 0.3s ease-in-out;
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 5px 10px rgba(0, 123, 255, 0.4);
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+  user-select: none;
+  letter-spacing: 0.03em;
 }
 .upload-btn:hover {
   background: #0056b3;
+  box-shadow: 0 8px 18px rgba(0, 86, 179, 0.6);
 }
 
-/* Botão de envio */
+/* Botão enviar para servidor */
 .send-btn {
   display: block;
   width: 100%;
-  padding: 12px;
+  padding: 14px 0;
   background: #28a745;
-  color: white;
-  font-size: 16px;
+  color: #fff;
+  font-size: 18px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.3s ease-in-out;
-  margin-top: 10px;
+  font-weight: 600;
+  margin-top: 18px;
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.5);
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+  user-select: none;
 }
-.send-btn:hover {
+.send-btn:hover:not(:disabled) {
   background: #218838;
+  box-shadow: 0 8px 20px rgba(33, 136, 56, 0.7);
 }
 .send-btn:disabled {
   background: #6c757d;
   cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.75;
 }
 
 /* Mensagens de status */
 .success-text {
   color: #28a745;
-  font-weight: bold;
-  margin: 10px 0;
+  font-weight: 700;
+  margin: 12px 0 20px;
+  font-size: 16px;
+  user-select: text;
 }
 
 .error-text {
   color: #dc3545;
-  font-weight: bold;
-  margin: 10px 0;
+  font-weight: 700;
+  margin: 12px 0 20px;
+  font-size: 16px;
+  user-select: text;
 }
 
-/* Card de informações extraídas */
-.data-card {
-  margin-top: 20px;
-  padding: 15px;
-  background: #3b3b5c;
-  border-radius: 10px;
-  text-align: left;
-}
-.data-card h4 {
-  margin-bottom: 10px;
-  color: #61dafb;
-  border-bottom: 1px solid #555;
-  padding-bottom: 5px;
-}
-.data-card p {
-  margin: 5px 0;
-  font-size: 14px;
-}
-.accessories-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.accessories-list li {
-  background: #45456d;
-  margin: 5px 0;
-  padding: 6px 10px;
-  border-radius: 5px;
-  font-size: 14px;
-}
+/* Seção com informações extraídas */
 .info-section {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background-color: #f9f9f9;
+  margin-top: 30px;
+  background-color: #3b3b5c;
+  padding: 22px 28px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  text-align: left;
+  color: #f5f5f5;
+  animation: fadeIn 0.4s ease-in-out;
+  user-select: text;
+}
+
+.info-section h3 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 22px;
+  color: #61dafb;
+  border-bottom: 2px solid #555;
+  padding-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+
+.info-section h4 {
+  margin-top: 26px;
+  font-size: 18px;
+  color: #9ddcff;
+  border-bottom: 1.5px solid #555;
+  padding-bottom: 4px;
+}
+
+.info-section p {
+  margin: 7px 0;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
+.info-section ul {
+  padding-left: 20px;
+  list-style-type: disc;
+  margin: 12px 0;
+}
+
+.info-section li {
+  background: #45456d;
+  margin: 6px 0;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #e0e0e0;
+  user-select: text;
+}
+
+/* Scroll para a lista de acessórios caso seja muito longa */
+.info-section ul {
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+/* Scrollbar estilizada para navegadores modernos */
+.info-section ul::-webkit-scrollbar {
+  width: 8px;
+}
+
+.info-section ul::-webkit-scrollbar-track {
+  background: #3b3b5c;
+  border-radius: 8px;
+}
+
+.info-section ul::-webkit-scrollbar-thumb {
+  background: #61dafb;
+  border-radius: 8px;
+}
+
+/* Responsividade */
+@media (max-width: 520px) {
+  .container {
+    width: 90%;
+    padding: 25px 20px;
+  }
+
+  .upload-btn,
+  .send-btn {
+    font-size: 15px;
+    padding: 12px 18px;
+  }
+
+  .info-section h3 {
+    font-size: 20px;
+  }
+  .info-section h4 {
+    font-size: 16px;
+  }
 }
