@@ -1,4 +1,24 @@
 export function extractConcessaoData(text) {
+
+const numeroChamadoMatch = text.match(/NÚMERO DO CHAMADO\s*([A-Z0-9]+)/i)
+const numeroChamado = numeroChamadoMatch ? numeroChamadoMatch[1].trim() : ""
+
+// Extrai Hostname
+const hostnameMatch = text.match(/HOSTNAME\s*([A-Z0-9]+)/i)
+const hostname = hostnameMatch ? hostnameMatch[1].trim() : ""
+
+// Regex para memória, captura a quantidade + GB + tipo DDR (opcional)
+const memoriaMatch = text.match(/MEMÓRIA\s*:\s*([\d]+GB\s*DDR[234]?)/i)
+
+// Regex para disco rígido, captura tipo (SSD/HDD), possivelmente interface e tamanho
+const discoRigidoMatch = text.match(/DISCO RÍGIDO\s*:\s*([A-Za-z0-9.\s]+?\s[\d]+GB)/i)
+
+let memoria = ""
+let discoRigido = ""
+
+if (memoriaMatch) memoria = memoriaMatch[1].trim()
+if (discoRigidoMatch) discoRigido = discoRigidoMatch[1].trim()
+
   const assinaturaRegex = /(?:assinatura|\/sign\/)/i
   const cpfRgRegex =
     /\b(\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{7,10}|[A-Z]{2}-\d{2}\.?\d{3}\.?\d{3})\b/
@@ -144,16 +164,20 @@ export function extractConcessaoData(text) {
     console.error("Erro ao extrair dados do termo de concessão:", error)
   }
 
-  return {
-    assinaturaValida,
-    notebookModel,
-    notebookBrand,
-    notebookTipo,
-    accessories,
-    serialNumber,
-    assetNumber,
-    nfNumber,
-    modelMonitor,
-    serialMonitor,
-  }
+return {
+  assinaturaValida,
+  notebookModel,
+  notebookBrand,
+  notebookTipo,
+  accessories,
+  serialNumber,
+  assetNumber,
+  nfNumber,
+  modelMonitor,
+  serialMonitor,
+  memoria,
+  discoRigido,
+  numeroChamado, 
+  hostname, 
+}
 }

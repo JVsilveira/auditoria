@@ -21,6 +21,10 @@ export default function App() {
     accessories: [],
     assetNumber: "",
     nfNumber: "",
+    numeroChamado: "",
+    hostname: "",
+    memoria: "",
+    discoRigido: "",
   })
 
   const handleFileChange = async event => {
@@ -40,6 +44,10 @@ export default function App() {
         accessories: [],
         assetNumber: "",
         nfNumber: "",
+        numeroChamado: "",
+        hostname: "",
+        memoria: "",
+        discoRigido: "",
       })
 
       try {
@@ -115,6 +123,10 @@ export default function App() {
       disponibilidade: tipoTermo === "concessao" ? "Em uso" : "Em estoque",
       assetNumber: dados.assetNumber || "",
       nfNumber: dados.nfNumber || "",
+      numeroChamado: dados.numeroChamado || "",
+      hostname: dados.hostname || "",
+      memoria: dados.memoria || "",
+      discoRigido: dados.discoRigido || "",
     }
 
     linhasParaPlanilha.push(linhaNotebook)
@@ -200,15 +212,27 @@ export default function App() {
             <strong>Marca:</strong> {dados.notebookBrand || "Não encontrado"}
           </p>
           <p>
-            <strong>Nº de Série:</strong>{" "}
-            {dados.serialNumber || "Não encontrado"}
+            <strong>Nº de Série:</strong> {dados.serialNumber || "Não encontrado"}
           </p>
           <p>
-            <strong>Número do Ativo:</strong>{" "}
-            {dados.assetNumber || "Não encontrado"}
+            <strong>Número do Ativo:</strong> {dados.assetNumber || "Não encontrado"}
           </p>
           <p>
             <strong>Nota Fiscal:</strong> {dados.nfNumber || "Não encontrado"}
+          </p>
+
+          <h4>Informações adicionais</h4>
+          <p>
+            <strong>Número do Chamado:</strong> {dados.numeroChamado || "Não encontrado"}
+          </p>
+          <p>
+            <strong>Hostname:</strong> {dados.hostname || "Não encontrado"}
+          </p>
+          <p>
+            <strong>Memória:</strong> {dados.memoria || "Não encontrado"}
+          </p>
+          <p>
+            <strong>Disco Rígido:</strong> {dados.discoRigido || "Não encontrado"}
           </p>
 
           <h4>Monitor</h4>
