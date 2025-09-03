@@ -1,0 +1,192 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* impede rolagem */
+  font-family: "Segoe UI", Roboto, sans-serif;
+}
+
+/* Container principal */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Temas */
+.light {
+  background: #dad9d9;
+  color: #333;
+}
+
+.dark {
+  background: #292828;
+  color: #f4f6f9;
+}
+
+/* Header */
+.header {
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: inherit;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.header h1 {
+  font-size: 1.5rem;
+}
+
+/* Switch estilo iPhone */
+.theme-switch {
+  width: 50px;
+  height: 28px;
+  border-radius: 50px;
+  background: #bdbdbd; /* cor default (claro) */
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+}
+
+.switch-handle {
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  left: 3px;
+  transition: left 0.3s, background 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Modo claro */
+.theme-switch.light {
+  background: #bdbdbd;
+}
+
+.theme-switch.light .switch-handle {
+  left: 3px;
+  background: white;
+}
+
+/* Modo escuro */
+.theme-switch.dark {
+  background: #4caf50; /* verde estilo iOS */
+}
+
+.theme-switch.dark .switch-handle {
+  left: 25px; /* desliza para a direita */
+  background: white;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+/* Inputs e botões */
+input[type="file"] {
+  padding: 0.5rem;
+  border: 2px dashed #888;
+  border-radius: 10px;
+  cursor: pointer;
+  background: transparent;
+  transition: border 0.3s;
+}
+
+input[type="file"]:hover {
+  border-color: #2bc459;
+}
+
+button {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  background: #4caf50;
+  color: white;
+  transition: background 0.3s;
+}
+
+button:disabled {
+  background: #1a1717;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  border-color: #2bc459;
+  background: #388e3c;
+}
+
+/* Botão download */
+.download-btn {
+  text-decoration: none;
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  background: #ff9800;
+  color: white;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.download-btn:hover {
+  background: #e68900;
+}
+
+/* Charts */
+.charts {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.chart {
+  padding: 1rem;
+  border-radius: 12px;
+  width: 300px;
+  text-align: center;
+  transition: background 0.3s;
+}
+
+/* Tema claro no container dos charts */
+.light .chart {
+  background: rgb(255, 255, 255);  /* branco suave */
+}
+
+/* Tema escuro no container dos charts */
+.dark .chart {
+  background: rgba(255, 255, 255, 0.08); /* branco translúcido */
+}
+
+/* Progress Bar */
+.progress-container {
+  width: 60%;
+  height: 12px;
+  background: #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #2bc459);
+  transition: width 0.3s ease-in-out;
+}
