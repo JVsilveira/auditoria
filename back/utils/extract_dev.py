@@ -52,6 +52,7 @@ def extract_devolucao_data(text: str) -> dict:
         
 
     # --- Acessórios ---
+    monitor = extract_segundo_termo("Monitor", text)
     mouse = extract_segundo_termo("Mouse", text)
     teclado = extract_segundo_termo("Teclado", text)
     headset = extract_segundo_termo("Headset", text)
@@ -77,7 +78,8 @@ def extract_devolucao_data(text: str) -> dict:
         "MODELO": notebook_model,
         "MARCA": notebook_brand,
         "SERIAL": serial_number,
-        "MONITOR": model_monitor,
+        "MONITOR": monitor,
+        "MODELO MONITOR": model_monitor,
         "SERIAL MONITOR": serial_monitor,
         "PATRIMÔNIO": "----------",
         "NF": "----------",

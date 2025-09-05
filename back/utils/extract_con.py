@@ -39,6 +39,17 @@ def extract_concessao_data(text: str) -> dict:
     asset_number_match = re.search(r"NÚMERO DO ATIVO\s*(\d+)", text, re.I)
     numero_chamado_match = re.search(r"NÚMERO DO CHAMADO\s*([A-Z0-9]+)", text, re.I)
     hostname_match = re.search(r"HOSTNAME\s*([A-Z0-9]+)", text, re.I)
+    monitor_match = re.search(
+    r"Monitor\s*\(Marca\/Modelo:\s*([^\)]*?)\s*Nro Série\s*:\s*([A-Za-z0-9\-]+)\)", 
+    text, re.I
+    )
+    if monitor_match:
+        model_monitor = monitor_match.group(1).strip()
+        serial_monitor = monitor_match.group(2).strip()
+    if not model_monitor or model_monitor.strip() == "-":
+     model_monitor = "----------"        
+    if not serial_monitor or serial_monitor.strip() == "-":
+     serial_monitor = "----------"    
 
     # --- Memória RAM ---
     memoria_match = re.search(r"MEMÓRIA\s*:\s*([\d]+\s*[Gg][Bb](?:\s*DDR[234])?)", text, re.I | re.S)
@@ -76,6 +87,7 @@ def extract_concessao_data(text: str) -> dict:
      serial_monitor = "----------"    
 
     # --- Periféricos ---
+    monitor = extract_primeiro_termo("Monitor", text)
     mouse = extract_primeiro_termo("Mouse", text)
     teclado = extract_primeiro_termo("Teclado", text)
     headset = extract_primeiro_termo("Headset", text)
@@ -101,7 +113,8 @@ def extract_concessao_data(text: str) -> dict:
         "MODELO": notebook_model,
         "MARCA": notebook_brand,
         "SERIAL": serial_number,
-        "MONITOR": model_monitor,
+        "MONITOR": monitor,
+        "MODELO MONITOR": model_monitor,
         "SERIAL MONITOR": serial_monitor,
         "PATRIMÔNIO": asset_number,
         "NF": nf_number,

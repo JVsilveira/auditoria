@@ -12,6 +12,7 @@ from utils.extract_text import extract_text_from_pdf
 from utils.extract_con import extract_concessao_data
 from utils.extract_dev import extract_devolucao_data
 from utils.renomear_excel import renomear_pdf
+from utils.extract_rat import extract_rat_data  
 
 # --- Configuração do app ---
 app = FastAPI()
@@ -32,7 +33,7 @@ os.makedirs(PASTA_TERMO, exist_ok=True)  # garante que exista
 
 COLUNAS = [
     "NOME", "TERMO", "ASSINADO", "TIPO", "MODELO",
-    "MARCA", "SERIAL", "MONITOR", "SERIAL MONITOR", "PATRIMÔNIO", "NF", "CHAMADO",
+    "MARCA", "SERIAL", "MONITOR","MODELO MONITOR", "SERIAL MONITOR", "PATRIMÔNIO", "NF", "CHAMADO",
     "HOSTNAME", "RAM", "MEMÓRIA", "MOUSE", "TECLADO", "HEADSET", "KIT BOAS-VINDAS", "WEBCAM", "HUB USB",
     "SUPORTE ERGONÔMICO", "CABO DE SEGURANÇA", "MOCHILA", "DOCK STATION", "LACRE DE SEGURANÇA",
     "CABO RCA", "BATERIA EXTRA", "CARREGADOR EXTRA", 
@@ -58,15 +59,31 @@ def append_row_to_excel(dados: dict):
         print(f"Erro ao escrever no Excel: {e}")
 
 # --- Processamento de PDF ---
-def process_pdf(path: str) -> dict:
+def process_pdf(path: str) -> list:
     texto = extract_text_from_pdf(path)
     texto_lower = texto.lower()
-    if "termo de concessão" in texto_lower or "entrego para uso" in texto_lower:
-        return extract_concessao_data(texto)
+
+    # PDFs RAT
+    if "rat" in texto_lower:
+        registros = extract_rat_data(texto)  # deve retornar lista
+        if not registros:
+            registros = [{"tipo": "rat, desconhecido"}]
+        return registros
+
+    # PDFs apenas concessão
+    elif "termo de concessão" in texto_lower or "entrego para uso" in texto_lower:
+        dados = extract_concessao_data(texto)
+        dados["tipo"] = "concessao"
+        return [dados]
+
+    # PDFs apenas devolução
     elif "termo de devolução" in texto_lower or "devolução de equipamento" in texto_lower:
-        return extract_devolucao_data(texto)
+        dados = extract_devolucao_data(texto)
+        dados["tipo"] = "devolucao"
+        return [dados]
+
     else:
-        return {"tipo": "desconhecido"}
+        return [{"tipo": "desconhecido"}]
 
 # --- WebSocket ---
 connected_clients = []
@@ -93,7 +110,7 @@ async def broadcast_progress(progress: int):
 async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
     ensure_excel_exists()
     resultados = []
-    chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "desconhecido": 0}
+    chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "rat": 0, "desconhecido": 0}
     total = len(pdfs)
 
     for idx, pdf in enumerate(pdfs):
@@ -112,22 +129,21 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
             novo_caminho = novo_caminho_final
 
             # Processa PDF
-            dados = process_pdf(novo_caminho)
-            dados["NOME"] = os.path.basename(novo_caminho)
-            
-            append_row_to_excel(dados)
+            registros = process_pdf(novo_caminho)  # agora retorna lista
+            for dados in registros:
+                dados["NOME"] = os.path.basename(novo_caminho)
+                append_row_to_excel(dados)
 
-            resultados.append({
-                "NOME": os.path.basename(novo_caminho),
-                "status": "ok",
-                "tipo": dados.get("tipo")
-            })
+                resultados.append({
+                    "NOME": os.path.basename(novo_caminho),
+                    "status": "ok",
+                    "tipo": dados.get("tipo", "desconhecido")
+                })
 
-            chart_data["ok"] += 1
-            if dados.get("tipo") in chart_data:
-                chart_data[dados.get("tipo")] += 1
-            else:
-                chart_data["desconhecido"] += 1
+                chart_data["ok"] += 1
+                for t in ["concessao", "devolucao", "rat", "desconhecido"]:
+                    if t in dados.get("tipo", ""):
+                        chart_data[t] += 1
 
         except Exception as e:
             resultados.append({"NOME": pdf.filename, "status": "erro", "erro": str(e)})
@@ -141,6 +157,7 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
 
     return {"resultados": resultados, "excelUrl": f"/download/{os.path.basename(SAIDA_XLSX)}", "chartData": chart_data}
 
+
 # --- Processar pasta ---
 @app.post("/processar-pasta")
 async def processar_pasta(diretorio: str = Body(..., embed=True)):
@@ -152,7 +169,7 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
         return {"erro": "Nenhum PDF encontrado no diretório."}
 
     resultados = []
-    chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "desconhecido": 0}
+    chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "rat": 0, "desconhecido": 0}
     total = len(arquivos_pdf)
 
     for idx, nome in enumerate(arquivos_pdf):
@@ -167,17 +184,12 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
             novo_caminho = novo_caminho_final
 
             # Processa PDF
-            dados = process_pdf(novo_caminho)
-            dados["NOME"] = os.path.basename(novo_caminho)
-            
-            append_row_to_excel(dados)
+            registros = process_pdf(novo_caminho)  # retorna lista
+            for dados in registros:
+                dados["NOME"] = os.path.basename(novo_caminho)
+                append_row_to_excel(dados)
 
-            resultados.append({"NOME": os.path.basename(novo_caminho), "status": "ok", "tipo": dados.get("tipo")})
-            chart_data["ok"] += 1
-            if dados.get("tipo") in chart_data:
-                chart_data[dados.get("tipo")] += 1
-            else:
-                chart_data["desconhecido"] += 1
+             
 
         except Exception as e:
             resultados.append({"NOME": nome, "status": "erro", "erro": str(e)})
@@ -186,6 +198,7 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
         await broadcast_progress(int((idx + 1) / total * 100))
 
     return {"resultados": resultados, "excelUrl": f"/download/{os.path.basename(SAIDA_XLSX)}", "chartData": chart_data}
+
 
 # --- Download Excel ---
 @app.get("/download/{filename}")
