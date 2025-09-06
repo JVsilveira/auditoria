@@ -1,7 +1,9 @@
 import re
+# from utils.consult_hostname import validate_hostname
 
 def validar_termo(dados: dict) -> bool:
     # --- Lista de modelos que dispensam validação de NF ---
+    
     modelos_excecao_nf = [
         "OPTIPLEX 7070", "LATITUDE 7400", "LATITUDE 5400", "LATITUDE 5420",
         "7070", "7400", "5400", "5420"
@@ -50,6 +52,9 @@ def validar_termo(dados: dict) -> bool:
 
         # Qualquer outro valor → erro
         return False
+    
+    # if not validate_hostname(dados.get("serial_number", ""), dados.get("hostname", "")):
+    #     return False
 
     # Para termos de devolução, RAT ou outros, apenas valida assinatura, monitor e NF
     return True

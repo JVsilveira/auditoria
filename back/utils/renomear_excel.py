@@ -55,7 +55,6 @@ def renomear_pdf(caminho_antigo: str) -> str:
     # --- Renomear arquivo ---
     try:
         os.rename(caminho_antigo, novo_caminho)
-        print(f"Arquivo renomeado: {novo_nome}")
     except Exception as e:
         print(f"Erro ao renomear {caminho_antigo}: {e}")
         novo_caminho = caminho_antigo  # mantém o nome original em caso de erro

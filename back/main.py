@@ -12,9 +12,6 @@ from utils.process_pdf import process_pdf
 from utils.renomear_excel import renomear_pdf
 from utils.validar_termo import validar_termo
 
-
-
-# --- Configuração do app ---
 app = FastAPI()
 
 app.add_middleware(
@@ -25,27 +22,55 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Excel e colunas ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAIDA_XLSX = os.path.join(BASE_DIR, "resultado.xlsx")
 PASTA_TERMO = os.path.join(BASE_DIR, "termos auditados")  # nova pasta
 os.makedirs(PASTA_TERMO, exist_ok=True)  # garante que exista
 
 COLUNAS = [
-    "NOME", "TERMO", "STATUS TERMO", "ASSINADO", "TIPO", "MODELO",
-    "MARCA", "SERIAL", "MONITOR","MODELO MONITOR", "SERIAL MONITOR", "PATRIMÔNIO", "NF", "CHAMADO",
-    "HOSTNAME", "RAM", "MEMÓRIA", "MOUSE", "TECLADO", "HEADSET", "KIT BOAS-VINDAS", "WEBCAM", "HUB USB",
-    "SUPORTE ERGONÔMICO", "CABO DE SEGURANÇA", "MOCHILA", "DOCK STATION", "LACRE DE SEGURANÇA",
-    "CABO RCA", "BATERIA EXTRA", "CARREGADOR EXTRA", 
-    "CABO DE FORÇA DO MONITOR", "FONTE", "ADAPTADOR HDMI"
+    "NOME",
+    "TERMO",
+    "STATUS TERMO",
+    "ASSINADO",
+    "TIPO",
+    "MODELO",
+    "MARCA",
+    "SERIAL",
+    "MONITOR",
+    "MODELO MONITOR",
+    "SERIAL MONITOR",
+    "PATRIMÔNIO",
+    "NF",
+    "CHAMADO",
+    "HOSTNAME",
+    "RAM",
+    "MEMÓRIA",
+    "MOUSE",
+    "TECLADO",
+    "HEADSET",
+    "KIT BOAS-VINDAS",
+    "WEBCAM",
+    "HUB USB",
+    "SUPORTE ERGONÔMICO",
+    "CABO DE SEGURANÇA",
+    "MOCHILA",
+    "DOCK STATION",
+    "LACRE DE SEGURANÇA",
+    "CABO RCA",
+    "BATERIA EXTRA",
+    "CARREGADOR EXTRA",
+    "CABO DE FORÇA DO MONITOR",
+    "FONTE",
+    "ADAPTADOR HDMI",
 ]
+
 
 def ensure_excel_exists():
     if not os.path.exists(SAIDA_XLSX):
         df = pd.DataFrame(columns=COLUNAS)
         df.to_excel(SAIDA_XLSX, index=False)
         format_excel(SAIDA_XLSX)
-        print("Excel criado e formatado: resultado.xlsx")
+
 
 def append_row_to_excel(dados: dict):
     ensure_excel_exists()
@@ -54,14 +79,13 @@ def append_row_to_excel(dados: dict):
         df = pd.concat([df, pd.DataFrame([dados])], ignore_index=True)
         df.to_excel(SAIDA_XLSX, index=False)
         format_excel(SAIDA_XLSX)
-        print(f"Linha adicionada: {dados.get('NOME', 'Desconhecido')}")
+
     except Exception as e:
         print(f"Erro ao escrever no Excel: {e}")
 
 
-
-# --- WebSocket ---
 connected_clients = []
+
 
 @app.websocket("/ws/progresso")
 async def websocket_progresso(ws: WebSocket):
@@ -73,6 +97,7 @@ async def websocket_progresso(ws: WebSocket):
     except Exception:
         connected_clients.remove(ws)
 
+
 async def broadcast_progress(progress: int):
     for ws in connected_clients:
         try:
@@ -80,19 +105,26 @@ async def broadcast_progress(progress: int):
         except Exception:
             connected_clients.remove(ws)
 
-# --- Upload PDFs ---
+
 @app.post("/upload")
 async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
     ensure_excel_exists()
     resultados = []
-    chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "rat": 0, "desconhecido": 0}
+    chart_data = {
+        "ok": 0,
+        "erro": 0,
+        "concessao": 0,
+        "devolucao": 0,
+        "rat": 0,
+        "desconhecido": 0,
+    }
     total = len(pdfs)
 
     TIPOS_MAP = {
         "CONCESSÃO": "concessao",
         "DEVOLUÇÃO": "devolucao",
         "RAT": "rat",
-        "DESCONHECIDO": "desconhecido"
+        "DESCONHECIDO": "desconhecido",
     }
 
     for idx, pdf in enumerate(pdfs):
@@ -103,7 +135,9 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
 
         try:
             novo_caminho = renomear_pdf(temp_path)
-            novo_caminho_final = os.path.join(PASTA_TERMO, os.path.basename(novo_caminho))
+            novo_caminho_final = os.path.join(
+                PASTA_TERMO, os.path.basename(novo_caminho)
+            )
             os.replace(novo_caminho, novo_caminho_final)
             novo_caminho = novo_caminho_final
 
@@ -121,11 +155,13 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
 
                 append_row_to_excel(dados)
 
-                resultados.append({
-                    "NOME": os.path.basename(novo_caminho),
-                    "status": status,
-                    "tipo": dados.get("TIPO", "desconhecido")
-                })
+                resultados.append(
+                    {
+                        "NOME": os.path.basename(novo_caminho),
+                        "status": status,
+                        "tipo": dados.get("TIPO", "desconhecido"),
+                    }
+                )
 
                 # Atualiza estatísticas gerais
                 if status == "erro":
@@ -134,7 +170,9 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
                     chart_data["ok"] += 1
 
                 # Atualiza estatísticas por tipo de documento
-                tipo_documento = TIPOS_MAP.get(dados.get("TERMO", "").upper(), "desconhecido")
+                tipo_documento = TIPOS_MAP.get(
+                    dados.get("TERMO", "").upper(), "desconhecido"
+                )
                 chart_data[tipo_documento] += 1
 
         except Exception as e:
@@ -146,10 +184,13 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
 
         await broadcast_progress(int((idx + 1) / total * 100))
 
-    return {"resultados": resultados, "excelUrl": f"/download/{os.path.basename(SAIDA_XLSX)}", "chartData": chart_data}
+    return {
+        "resultados": resultados,
+        "excelUrl": f"/download/{os.path.basename(SAIDA_XLSX)}",
+        "chartData": chart_data,
+    }
 
 
-# --- Processar pasta ---
 @app.post("/processar-pasta")
 async def processar_pasta(diretorio: str = Body(..., embed=True)):
     if not os.path.isdir(diretorio):
@@ -160,13 +201,20 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
         return {"erro": "Nenhum PDF encontrado no diretório."}
 
     resultados = []
-    chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "rat": 0, "desconhecido": 0}
+    chart_data = {
+        "ok": 0,
+        "erro": 0,
+        "concessao": 0,
+        "devolucao": 0,
+        "rat": 0,
+        "desconhecido": 0,
+    }
 
     TIPOS_MAP = {
         "CONCESSÃO": "concessao",
         "DEVOLUÇÃO": "devolucao",
         "RAT": "rat",
-        "DESCONHECIDO": "desconhecido"
+        "DESCONHECIDO": "desconhecido",
     }
 
     total = len(arquivos_pdf)
@@ -175,7 +223,9 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
         path = os.path.join(diretorio, nome)
         try:
             novo_caminho = renomear_pdf(path)
-            novo_caminho_final = os.path.join(PASTA_TERMO, os.path.basename(novo_caminho))
+            novo_caminho_final = os.path.join(
+                PASTA_TERMO, os.path.basename(novo_caminho)
+            )
             os.replace(novo_caminho, novo_caminho_final)
             novo_caminho = novo_caminho_final
 
@@ -192,18 +242,22 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
 
                 append_row_to_excel(dados)
 
-                resultados.append({
-                    "NOME": os.path.basename(novo_caminho),
-                    "status": status,
-                    "tipo": dados.get("TIPO", "desconhecido")
-                })
+                resultados.append(
+                    {
+                        "NOME": os.path.basename(novo_caminho),
+                        "status": status,
+                        "tipo": dados.get("TIPO", "desconhecido"),
+                    }
+                )
 
                 if status == "erro":
                     chart_data["erro"] += 1
                 else:
                     chart_data["ok"] += 1
 
-                tipo_documento = TIPOS_MAP.get(dados.get("TERMO", "").upper(), "desconhecido")
+                tipo_documento = TIPOS_MAP.get(
+                    dados.get("TERMO", "").upper(), "desconhecido"
+                )
                 chart_data[tipo_documento] += 1
 
         except Exception as e:
@@ -212,7 +266,12 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
 
         await broadcast_progress(int((idx + 1) / total * 100))
 
-    return {"resultados": resultados, "excelUrl": f"/download/{os.path.basename(SAIDA_XLSX)}", "chartData": chart_data}
+    return {
+        "resultados": resultados,
+        "excelUrl": f"/download/{os.path.basename(SAIDA_XLSX)}",
+        "chartData": chart_data,
+    }
+
 
 # --- Download Excel ---
 @app.get("/download/{filename}")
@@ -222,6 +281,6 @@ def download_file(filename: str):
         return FileResponse(
             path,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            filename=filename
+            filename=filename,
         )
     return {"erro": "Arquivo não encontrado."}
