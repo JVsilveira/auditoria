@@ -1,8 +1,0 @@
-fastapi==0.116.1
-fitz==0.0.1.dev2
-openpyxl==3.1.5
-pandas==2.3.2
-python-multipart==0.0.20
-PyMuPDF==1.26.4
-uuid==1.30
-asyncio==4.0.0

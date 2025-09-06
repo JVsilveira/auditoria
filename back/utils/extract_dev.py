@@ -49,7 +49,7 @@ def extract_devolucao_data(text: str) -> dict:
      model_monitor = "----------"        
     if not serial_monitor or serial_monitor.strip() == "-":
      serial_monitor = "----------"    
-        
+           
 
     # --- Acessórios ---
     monitor = extract_segundo_termo("Monitor", text)

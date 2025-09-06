@@ -155,6 +155,9 @@ button:hover:not(:disabled) {
   display: flex;
   gap: 2rem;
   margin-top: 2rem;
+  justify-content: center; /* centraliza horizontalmente */
+  align-items: center;
+  flex-wrap: wrap; /* permite que quebrem linha se não couber */
 }
 
 .chart {
@@ -163,6 +166,10 @@ button:hover:not(:disabled) {
   width: 300px;
   text-align: center;
   transition: background 0.3s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; /* centraliza título e gráfico */
 }
 
 /* Tema claro no container dos charts */

@@ -2,6 +2,17 @@ import React, { useState, useEffect, useRef } from "react";
 import { uploadPdfs } from "../utils/api.js";
 import "./App.css";
 import { Pie, Bar } from "react-chartjs-2";
+import ChartDataLabels from "chartjs-plugin-datalabels";
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ChartDataLabels // registrando plugin
+);
 import {
   Chart as ChartJS,
   ArcElement,
@@ -27,33 +38,31 @@ export default function App() {
 
   // --- WebSocket ---
   useEffect(() => {
-  const connectWS = () => {
-    const ws = new WebSocket("ws://127.0.0.1:8000/ws/progresso");
-    wsRef.current = ws;
+    const connectWS = () => {
+      const ws = new WebSocket("ws://127.0.0.1:8000/ws/progresso");
+      wsRef.current = ws;
 
-    ws.onopen = () => console.log("WebSocket conectado");
+      ws.onopen = () => console.log("WebSocket conectado");
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.progress !== undefined) {
-        setProgresso(data.progress);
-      }
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.progress !== undefined) setProgresso(data.progress);
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket desconectado. Tentando reconectar...");
+        setTimeout(connectWS, 3000);
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket erro:", err);
+        ws.close();
+      };
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket desconectado. Tentando reconectar...");
-      setTimeout(connectWS, 3000);
-    };
-
-    ws.onerror = (err) => {
-      console.error("WebSocket erro:", err);
-      ws.close();
-    };
-  };
-
-  connectWS();
-  return () => wsRef.current?.close();
-}, []);
+    connectWS();
+    return () => wsRef.current?.close();
+  }, []);
 
   const handleFileChange = (e) => setFiles(Array.from(e.target.files));
 
@@ -66,6 +75,7 @@ export default function App() {
       const data = await uploadPdfs(files);
       setResultados(data.resultados || []);
       setExcelUrl(data.excelUrl || "");
+
       if (data.chartData) {
         setChartData({
           pie: {
@@ -78,16 +88,16 @@ export default function App() {
             ],
           },
           bar: {
-            labels: ["Concessão", "Devolução"],
+            labels: ["Concessão", "Devolução", "RAT"],
             datasets: [
               {
-                label: "Documentos",
                 data: [
                   data.chartData.concessao || 0,
                   data.chartData.devolucao || 0,
-                  data.chartData.desconhecido || 0,
+                  data.chartData.rat || 0,
                 ],
-                backgroundColor: ["#2196f3", "#ff9800", "#9c27b0"],
+                backgroundColor: ["#2196f3", "#ff9800", "#4caf50"],
+                label: "", // rótulo vazio
               },
             ],
           },
@@ -103,17 +113,17 @@ export default function App() {
 
   return (
     <div className={`container ${darkMode ? "dark" : "light"}`}>
-     <header className="header">
-  <h1>Processador de PDFs</h1>
- <div 
-  className={`theme-switch ${darkMode ? "dark" : "light"}`} 
-  onClick={() => setDarkMode(!darkMode)}
->
-  <span className="icon sun">☀️</span>
-  <span className="icon moon">🌙</span>
-  <div className="switch-handle"></div>
-</div>
-</header>
+      <header className="header">
+        <h1>Processador de PDFs</h1>
+        <div
+          className={`theme-switch ${darkMode ? "dark" : "light"}`}
+          onClick={() => setDarkMode(!darkMode)}
+        >
+          <span className="icon sun">☀️</span>
+          <span className="icon moon">🌙</span>
+          <div className="switch-handle"></div>
+        </div>
+      </header>
 
       <main className="main">
         <input
@@ -139,14 +149,55 @@ export default function App() {
 
         {chartData && (
           <div className="charts">
-            <div className="chart">
+            <div className="chart" style={{ maxWidth: "300px", width: "100%", height: "400px" }}>
+              <br />
               <h3>Documentos corretos x incorretos</h3>
-              <Pie data={chartData.pie} />
+              <Pie
+                data={chartData.pie}
+                options={{
+                  plugins: {
+                    legend: { display: true },
+                    datalabels: {
+                      color: "#fff",
+                      formatter: (value, context) => {
+                        const dataset = context.dataset.data;
+                        const total = dataset.reduce((acc, val) => acc + val, 0);
+                        const percent = ((value / total) * 100).toFixed(1);
+                        return `${percent}%`;
+                      },
+                    },
+                  },
+                  responsive: true,
+                  maintainAspectRatio: true,
+                }}
+              />
             </div>
-            <div className="chart">
+            <div className="chart" style={{ maxWidth: "300px", width: "100%", height: "400px" }}>
               <h3>Tipos de documentos</h3>
-              <Bar data={chartData.bar} />
+              <br />
+              <Bar
+                data={chartData.bar}
+                options={{
+                  plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                      anchor: "center",
+                      align: "center",
+                      color: "#ffff",
+                      formatter: (value, context) => {
+                        const dataset = context.dataset.data;
+                        const total = dataset.reduce((acc, val) => acc + val, 0);
+                        const percent = ((value / total) * 100).toFixed(1);
+                        return `${percent}%`;
+                      },
+                    },
+                  },
+                  responsive: true,
+                  maintainAspectRatio: true,
+                }}
+              />
             </div>
+
           </div>
         )}
       </main>

@@ -8,11 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from typing import List
 from utils.format_excel import format_excel
-from utils.extract_text import extract_text_from_pdf
-from utils.extract_con import extract_concessao_data
-from utils.extract_dev import extract_devolucao_data
+from utils.process_pdf import process_pdf
 from utils.renomear_excel import renomear_pdf
-from utils.extract_rat import extract_rat_data  
+from utils.validar_termo import validar_termo
+
+
 
 # --- Configuração do app ---
 app = FastAPI()
@@ -32,7 +32,7 @@ PASTA_TERMO = os.path.join(BASE_DIR, "termos auditados")  # nova pasta
 os.makedirs(PASTA_TERMO, exist_ok=True)  # garante que exista
 
 COLUNAS = [
-    "NOME", "TERMO", "ASSINADO", "TIPO", "MODELO",
+    "NOME", "TERMO", "STATUS TERMO", "ASSINADO", "TIPO", "MODELO",
     "MARCA", "SERIAL", "MONITOR","MODELO MONITOR", "SERIAL MONITOR", "PATRIMÔNIO", "NF", "CHAMADO",
     "HOSTNAME", "RAM", "MEMÓRIA", "MOUSE", "TECLADO", "HEADSET", "KIT BOAS-VINDAS", "WEBCAM", "HUB USB",
     "SUPORTE ERGONÔMICO", "CABO DE SEGURANÇA", "MOCHILA", "DOCK STATION", "LACRE DE SEGURANÇA",
@@ -58,32 +58,7 @@ def append_row_to_excel(dados: dict):
     except Exception as e:
         print(f"Erro ao escrever no Excel: {e}")
 
-# --- Processamento de PDF ---
-def process_pdf(path: str) -> list:
-    texto = extract_text_from_pdf(path)
-    texto_lower = texto.lower()
 
-    # PDFs RAT
-    if "rat" in texto_lower:
-        registros = extract_rat_data(texto)  # deve retornar lista
-        if not registros:
-            registros = [{"tipo": "rat, desconhecido"}]
-        return registros
-
-    # PDFs apenas concessão
-    elif "termo de concessão" in texto_lower or "entrego para uso" in texto_lower:
-        dados = extract_concessao_data(texto)
-        dados["tipo"] = "concessao"
-        return [dados]
-
-    # PDFs apenas devolução
-    elif "termo de devolução" in texto_lower or "devolução de equipamento" in texto_lower:
-        dados = extract_devolucao_data(texto)
-        dados["tipo"] = "devolucao"
-        return [dados]
-
-    else:
-        return [{"tipo": "desconhecido"}]
 
 # --- WebSocket ---
 connected_clients = []
@@ -113,6 +88,13 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
     chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "rat": 0, "desconhecido": 0}
     total = len(pdfs)
 
+    TIPOS_MAP = {
+        "CONCESSÃO": "concessao",
+        "DEVOLUÇÃO": "devolucao",
+        "RAT": "rat",
+        "DESCONHECIDO": "desconhecido"
+    }
+
     for idx, pdf in enumerate(pdfs):
         temp_path = f"temp_{uuid.uuid4().hex}_{pdf.filename}"
         contents = await pdf.read()
@@ -120,36 +102,45 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)):
             f.write(contents)
 
         try:
-            # Renomeia PDF
             novo_caminho = renomear_pdf(temp_path)
-
-            # Move para a pasta "termos auditados"
             novo_caminho_final = os.path.join(PASTA_TERMO, os.path.basename(novo_caminho))
             os.replace(novo_caminho, novo_caminho_final)
             novo_caminho = novo_caminho_final
 
-            # Processa PDF
-            registros = process_pdf(novo_caminho)  # agora retorna lista
+            registros = process_pdf(novo_caminho)
             for dados in registros:
                 dados["NOME"] = os.path.basename(novo_caminho)
+
+                # Define status do termo
+                if validar_termo(dados):
+                    dados["STATUS TERMO"] = "OK"
+                    status = "ok"
+                else:
+                    dados["STATUS TERMO"] = "ERRO"
+                    status = "erro"
+
                 append_row_to_excel(dados)
 
                 resultados.append({
                     "NOME": os.path.basename(novo_caminho),
-                    "status": "ok",
-                    "tipo": dados.get("tipo", "desconhecido")
+                    "status": status,
+                    "tipo": dados.get("TIPO", "desconhecido")
                 })
 
-                chart_data["ok"] += 1
-                for t in ["concessao", "devolucao", "rat", "desconhecido"]:
-                    if t in dados.get("tipo", ""):
-                        chart_data[t] += 1
+                # Atualiza estatísticas gerais
+                if status == "erro":
+                    chart_data["erro"] += 1
+                else:
+                    chart_data["ok"] += 1
+
+                # Atualiza estatísticas por tipo de documento
+                tipo_documento = TIPOS_MAP.get(dados.get("TERMO", "").upper(), "desconhecido")
+                chart_data[tipo_documento] += 1
 
         except Exception as e:
             resultados.append({"NOME": pdf.filename, "status": "erro", "erro": str(e)})
             chart_data["erro"] += 1
         finally:
-            # Remove temporário se ainda existir
             if os.path.exists(temp_path) and temp_path != novo_caminho:
                 os.remove(temp_path)
 
@@ -170,26 +161,50 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
 
     resultados = []
     chart_data = {"ok": 0, "erro": 0, "concessao": 0, "devolucao": 0, "rat": 0, "desconhecido": 0}
+
+    TIPOS_MAP = {
+        "CONCESSÃO": "concessao",
+        "DEVOLUÇÃO": "devolucao",
+        "RAT": "rat",
+        "DESCONHECIDO": "desconhecido"
+    }
+
     total = len(arquivos_pdf)
 
     for idx, nome in enumerate(arquivos_pdf):
         path = os.path.join(diretorio, nome)
         try:
-            # Renomeia PDF
             novo_caminho = renomear_pdf(path)
-
-            # Move para a pasta "termos auditados"
             novo_caminho_final = os.path.join(PASTA_TERMO, os.path.basename(novo_caminho))
             os.replace(novo_caminho, novo_caminho_final)
             novo_caminho = novo_caminho_final
 
-            # Processa PDF
-            registros = process_pdf(novo_caminho)  # retorna lista
+            registros = process_pdf(novo_caminho)
             for dados in registros:
                 dados["NOME"] = os.path.basename(novo_caminho)
+
+                if validar_termo(dados):
+                    dados["STATUS TERMO"] = "OK"
+                    status = "ok"
+                else:
+                    dados["STATUS TERMO"] = "ERRO"
+                    status = "erro"
+
                 append_row_to_excel(dados)
 
-             
+                resultados.append({
+                    "NOME": os.path.basename(novo_caminho),
+                    "status": status,
+                    "tipo": dados.get("TIPO", "desconhecido")
+                })
+
+                if status == "erro":
+                    chart_data["erro"] += 1
+                else:
+                    chart_data["ok"] += 1
+
+                tipo_documento = TIPOS_MAP.get(dados.get("TERMO", "").upper(), "desconhecido")
+                chart_data[tipo_documento] += 1
 
         except Exception as e:
             resultados.append({"NOME": nome, "status": "erro", "erro": str(e)})
@@ -198,7 +213,6 @@ async def processar_pasta(diretorio: str = Body(..., embed=True)):
         await broadcast_progress(int((idx + 1) / total * 100))
 
     return {"resultados": resultados, "excelUrl": f"/download/{os.path.basename(SAIDA_XLSX)}", "chartData": chart_data}
-
 
 # --- Download Excel ---
 @app.get("/download/{filename}")

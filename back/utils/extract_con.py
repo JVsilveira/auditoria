@@ -25,7 +25,7 @@ def extract_valor_especial(item_name: str, text: str) -> str:
 
 def extract_concessao_data(text: str) -> dict:
     assinatura_valida = validar_assinatura(text)
-    
+        
     notebook_tipo = notebook_model = notebook_brand = serial_number = ""
     model_monitor = serial_monitor = ""
     asset_number = nf_number = numero_chamado = hostname = memoria = disco_rigido = ""
