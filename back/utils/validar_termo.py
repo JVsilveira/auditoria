@@ -29,9 +29,9 @@ def validar_termo(dados: dict) -> bool:
             return False
 
     # --- Verifica hostname ---
-    hostname = str(dados.get("HOSTNAME", "")).strip()
-    matricula = str(dados.get("MATRICULA", "")).strip()
-    if hostname:  # só valida se existir
+    if dados.get("TERMO") == "CONCESSÃO":
+        hostname = str(dados.get("HOSTNAME", "")).strip()
+        matricula = str(dados.get("MATRICULA", "")).strip()
         if not validar_hostname(hostname, matricula if matricula else None):
             return False
 

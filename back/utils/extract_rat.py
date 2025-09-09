@@ -1,8 +1,8 @@
-from utils.extract_sign import validar_assinatura
+from utils.extract_sign import validar_assinatura_rat
 
 def extract_rat_data(text: str) -> dict:
 
-    assinatura_valida = validar_assinatura(text)
+    assinatura_valida = validar_assinatura_rat(text)
 
     return {
         "TERMO": "RAT",
